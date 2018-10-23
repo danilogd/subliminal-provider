@@ -9,12 +9,16 @@ from requests import Session
 
 from . import ParserBeautifulSoup, Provider
 from .. import __short_version__
+from ..cache import SHOW_EXPIRATION_TIME, region
+from ..exceptions import AuthenticationError, ConfigurationError, DownloadLimitExceeded
+from ..score import get_equivalent_release_groups
+from ..subtitle import Subtitle, fix_line_ending, guess_matches
+from ..utils import sanitize, sanitize_release_group
+from ..video import Episode
 
+logger = logging.getLogger(__name__)
 
-
-
-
-
+language_converters.register('subtitulamos = subliminal.converters.subtitulamos:SubtitulamosConverter')
 
 
 class SubtitulamosSubtitle(Subtitle):
@@ -76,24 +80,23 @@ class SubtitulamosProvider(Provider):
         self.session.close()
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
-    def get_ids(self, series, season, episode):
+    def get_episode_id(self, series, season, episode):
         q = '%s %dx%d' % (series, season, episode)
         logger.info('Getting show and episode id')
         r = self.session.get(self.server_url + 'search/query',  params={'q': q}, timeout=10)
         r.raise_for_status()
 
         busqueda = r.content
-        if not busqueda:
+        if busqueda == '[]':
             logger.error('Show id not found')
-            return [None, None]
+            return None
 
-        show_id = json.loads(busqueda)[0]['id']
         episodes = json.loads(busqueda)[0]['episodes']
         if episodes:
             episode_id = episodes[0]['id']
         else:
             episode_id = None
-        return (show_id, episode_id)
+        return episode_id
 
     def query(self, episode_id, series, season, episode):
         # get the episode page
@@ -128,15 +131,15 @@ class SubtitulamosProvider(Provider):
 
     def list_subtitles(self, video, languages):
         # lookup show_id and episode_id
-        show_id, episode_id = self.get_ids(video.series, video.season, video.episode)
+        episode_id = self.get_episode_id(video.series, video.season, video.episode)
 
-        if show_id is not None:
+        if episode_id is not None:
             subtitles = [s for s in self.query(episode_id, video.series, video.season, video.episode)
                          if s.language in languages]
             if subtitles:
                 return subtitles
         else:
-            logger.error('No show id found for %r', video.series)
+            logger.error('No episode found for %r', video.series)
 
         return []
 
