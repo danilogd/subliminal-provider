@@ -2,24 +2,25 @@
 from babelfish import LanguageReverseConverter, language_converters
 
 
-class TVsubtitlesConverter(LanguageReverseConverter):
+class SubtitulamosConverter(LanguageReverseConverter):
     def __init__(self):
         self.alpha2_converter = language_converters['alpha2']
-        self.from_tvsubtitles = {'br': ('por', 'BR'), 'ua': ('ukr',), 'gr': ('ell',), 'cn': ('zho',), 'jp': ('jpn',),
-                                 'cz': ('ces',)}
-        self.to_tvsubtitles = {v: k for k, v in self.from_tvsubtitles.items()}
-        self.codes = self.alpha2_converter.codes | set(self.from_tvsubtitles.keys())
+        self.from_subtitulamos = {u'Català': ('cat',), 'Galego': ('glg',), 'English': ('eng',),
+                                  u'Español (Latinoamérica)': ('lat',), u'Español (España)': ('spa',)}
+        self.to_subtitulamos = {('cat',): 'Català', ('glg',): 'Galego', ('eng',): 'English',
+                                ('lat',): 'Español (Latinoamérica)', ('spa',): 'Español (España)'}
+        self.codes = self.alpha2_converter.codes | set(self.from_subtitulamos.keys())
 
     def convert(self, alpha3, country=None, script=None):
-        if (alpha3, country) in self.to_tvsubtitles:
-            return self.to_tvsubtitles[(alpha3, country)]
-        if (alpha3,) in self.to_tvsubtitles:
-            return self.to_tvsubtitles[(alpha3,)]
+        if (alpha3, country) in self.to_subtitulamos:
+            return self.to_subtitulamos[(alpha3, country)]
+        if (alpha3,) in self.to_subtitulamos:
+            return self.to_subtitulamos[(alpha3,)]
 
         return self.alpha2_converter.convert(alpha3, country, script)
 
     def reverse(self, tvsubtitles):
-        if tvsubtitles in self.from_tvsubtitles:
-            return self.from_tvsubtitles[tvsubtitles]
+        if tvsubtitles in self.from_subtitulamos:
+            return self.from_subtitulamos[subtitulamos]
 
-        return self.alpha2_converter.reverse(tvsubtitles)
+        return self.alpha2_converter.reverse(subtitulamos)
