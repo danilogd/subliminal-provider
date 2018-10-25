@@ -92,7 +92,7 @@ class SubtitulamosProvider(Provider):
             return None
 
         for item in resultado:
-            if item['name'] = series and item['episodes'] != []:
+            if item['name'] == series and item['episodes'] != []:
                 episode_id = item['episodes'][0]['id']
                 logger.debug('Episode id %s', episode_id)
                 return episode_id
