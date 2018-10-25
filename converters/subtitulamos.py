@@ -19,8 +19,8 @@ class SubtitulamosConverter(LanguageReverseConverter):
 
         return self.alpha2_converter.convert(alpha3, country, script)
 
-    def reverse(self, tvsubtitles):
-        if tvsubtitles in self.from_subtitulamos:
+    def reverse(self, subtitulamos):
+        if subtitulamos in self.from_subtitulamos:
             return self.from_subtitulamos[subtitulamos]
 
         return self.alpha2_converter.reverse(subtitulamos)

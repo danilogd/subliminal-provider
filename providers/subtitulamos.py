@@ -25,8 +25,8 @@ class SubtitulamosSubtitle(Subtitle):
     """Subtitulamos.tv Subtitle."""
     provider_name = 'subtitulamos'
 
-    def _init_(self, language, series, season, episode, title, version, download_link):
-        super(SubtitulamosSubtitle, self)._init_(language)
+    def __init__(self, language, series, season, episode, title, version, download_link):
+        super(SubtitulamosSubtitle, self).__init__(language)
         self.series = series
         self.season = season
         self.episode = episode
@@ -66,10 +66,10 @@ class SubtitulamosProvider(Provider):
     """Subtitulamos.tv Provider."""
     languages = {Language('spa', 'CL')} | {Language('spa', 'ES')} | {Language(l) for l in ['cat', 'glg', 'eng']}
     video_types = (Episode,)
-    server_url = 'http://www.subtitulamos.tv/'
+    server_url = 'http://www.subtitulamos.tv'
     subtitle_class = SubtitulamosSubtitle
 
-    def _init_(self):
+    def __init__(self):
         self.session = None
 
     def initialize(self):
@@ -82,8 +82,8 @@ class SubtitulamosProvider(Provider):
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def get_episode_id(self, series, season, episode):
         q = '%s %dx%d' % (series, season, episode)
-        logger.info('Getting show and episode id')
-        r = self.session.get(self.server_url + 'search/query',  params={'q': q}, timeout=10)
+        logger.info('Getting episode id with query %s', q)
+        r = self.session.get(self.server_url + '/search/query',  params={'q': q}, timeout=10)
         r.raise_for_status()
 
         busqueda = r.content
@@ -96,13 +96,14 @@ class SubtitulamosProvider(Provider):
             episode_id = episodes[0]['id']
         else:
             episode_id = None
+        logger.debug('Episode id %s', episode_id)
         return episode_id
 
     def query(self, episode_id, series, season, episode):
         # get the episode page
         logger.info('Getting the page for episode %d', episode_id)
-        r = self.session.get(self.server_url + 'episodes/%d' % episode_id, timeout=10)
-        soup = ParserBeautifulSoup(r.content, 'html.parser')
+        r = self.session.get(self.server_url + '/episodes/%d' % episode_id, timeout=10)
+        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
 
         subtitles = []
         series = soup.select_one('.show-name').text
@@ -117,7 +118,7 @@ class SubtitulamosProvider(Provider):
             if row['class'][0] == 'compact':
                 versiones = row.select_one('.version_name').text.split('/')
                 completado = row.select('.unavailable') == []
-                download_link = server_url + row.select_one('.download_subtitle').parent['href']
+                download_link = self.server_url + row.select_one('.download_subtitle').parent['href']
                 for version in versiones:
                     if completado:
                         subtitle = self.subtitle_class(language, series, int(season), int(episode), title, version, download_link)
@@ -139,18 +140,18 @@ class SubtitulamosProvider(Provider):
             if subtitles:
                 return subtitles
         else:
-            logger.error('No episode found for %r', video.series)
+            logger.error('No episode found for %r S%rE%r', video.series, video.season, video.episode)
 
         return []
 
     def download_subtitle(self, subtitle):
         # donwload the subtitle
         logger.info('Downloading subtitle %r', subtitle)
-        r = self.session.get(self.server_url + subtitle.download_link, timeout=10)
+        r = self.session.get(subtitle.download_link, timeout=10)
         r.raise_for_status()
 
         if not r.content:
             logger.debug('Unable to download subtitle. No data returned from provider')
             return
 
-        subtitle.content = fix_line_endings(r.content)
+        subtitle.content = fix_line_ending(r.content)
