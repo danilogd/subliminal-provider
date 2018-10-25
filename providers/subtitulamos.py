@@ -85,19 +85,19 @@ class SubtitulamosProvider(Provider):
         logger.info('Getting episode id with query %s', q)
         r = self.session.get(self.server_url + '/search/query',  params={'q': q}, timeout=10)
         r.raise_for_status()
+        resultado = json.loads(r.content)
 
-        busqueda = r.content
-        if busqueda == '[]':
-            logger.error('Show id not found')
+        if not resultado:
+            logger.error('Show not found')
             return None
 
-        episodes = json.loads(busqueda)[0]['episodes']
-        if episodes:
-            episode_id = episodes[0]['id']
-        else:
-            episode_id = None
-        logger.debug('Episode id %s', episode_id)
-        return episode_id
+        for item in resultado:
+            if item['name'] = series and item['episodes'] != []:
+                episode_id = item['episodes'][0]['id']
+                logger.debug('Episode id %s', episode_id)
+                return episode_id
+
+        return None
 
     def query(self, episode_id, series, season, episode):
         # get the episode page
