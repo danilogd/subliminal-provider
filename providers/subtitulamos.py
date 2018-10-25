@@ -131,7 +131,7 @@ class SubtitulamosProvider(Provider):
 
 
     def list_subtitles(self, video, languages):
-        # lookup show_id and episode_id
+        # lookup episode_id
         episode_id = self.get_episode_id(video.series, video.season, video.episode)
 
         if episode_id is not None:
