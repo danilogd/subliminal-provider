@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-import re
-import json
 
 from babelfish import Language, language_converters
 from guessit import guessit
@@ -42,8 +40,7 @@ class SubtitulamosSubtitle(Subtitle):
         matches = set()
 
         # series name
-        if video.series and sanitize(self.series) in (
-                sanitize(name) for name in [video.series] + video.alternative_series):
+        if video.series and sanitize(self.series) == sanitize(video.series):
             matches.add('series')
         # season
         if video.season and self.season == video.season:
@@ -64,7 +61,7 @@ class SubtitulamosSubtitle(Subtitle):
 
 class SubtitulamosProvider(Provider):
     """Subtitulamos.tv Provider."""
-    languages = {Language('spa', 'CL')} | {Language('spa', 'ES')} | {Language(l) for l in ['cat', 'glg', 'eng']}
+    languages = {Language(l) for l in ['lat', 'spa', 'cat', 'glg', 'eng']}
     video_types = (Episode,)
     server_url = 'http://www.subtitulamos.tv'
     subtitle_class = SubtitulamosSubtitle
@@ -85,7 +82,7 @@ class SubtitulamosProvider(Provider):
         logger.info('Getting episode id with query %s', q)
         r = self.session.get(self.server_url + '/search/query',  params={'q': q}, timeout=10)
         r.raise_for_status()
-        resultado = json.loads(r.content)
+        resultado = r.json()
 
         if not resultado:
             logger.error('Show not found')
